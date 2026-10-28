@@ -1,47 +1,87 @@
-# Pi Codex Pulse
+<p align="center">
+  <a href="https://github.com/eValue8bv/pi-codex-pulse/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/eValue8bv/pi-codex-pulse?style=flat&amp;logo=github&amp;label=release" /></a>
+  <a href="https://github.com/eValue8bv/pi-codex-pulse/actions/workflows/check.yml"><img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/eValue8bv/pi-codex-pulse/check.yml?event=pull_request&amp;style=flat&amp;label=CI&amp;logo=githubactions&amp;logoColor=white" /></a>
+  <a href="https://github.com/eValue8bv/pi-codex-pulse"><img alt="GitHub stars" src="https://img.shields.io/github/stars/eValue8bv/pi-codex-pulse?style=flat&amp;logo=github&amp;label=stars" /></a>
+  <a href="https://pi.dev"><img alt="Pi 1.4.0 or newer" src="https://img.shields.io/badge/Pi-%E2%89%A51.4.0-8A5CF6?style=flat" /></a>
+  <a href="https://nodejs.org/en/download"><img alt="Node.js 22.19.0 or newer" src="https://img.shields.io/badge/Node.js-%E2%89%A522.19.0-5FA04E?style=flat&amp;logo=nodedotjs&amp;logoColor=white" /></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/eValue8bv/pi-codex-pulse?style=flat" /></a>
+</p>
 
-Codex subscription usage and remaining limits in [Pi](https://pi.dev).
+<h1 align="center">Pi Codex Pulse</h1>
 
-```text
-codex · 70% 5h ↻2h14m (16:30) · 40% 1w ↻3d (Thu 16:30) · 12.5 usage credits · 2 reset credits
-```
+<p align="center">
+  Track Codex usage, limits, and credits in <a href="https://pi.dev">Pi</a>. Redeem reset credits with confirmation.
+</p>
 
-## Installation
+## Quick start
 
 ```sh
 pi install git:github.com/eValue8bv/pi-codex-pulse
 ```
 
-Restart Pi or run `/reload` to load the extension.
+In Pi, run `/reload` (or restart), then use:
 
-### Requirements
+| Command               | What it does                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| `/codex-usage`        | Show current usage and credits. Read-only.                                                      |
+| `/codex-redeem-reset` | [Reset eligible limits](#redeem-a-reset-credit). **Consumes a credit after two confirmations.** |
 
-- Node.js 22.19 or newer.
-- Pi 1.4.0 or newer.
-- A Codex subscription login in Pi (`/login`) or [Codex CLI](https://github.com/openai/codex) (`codex login`).
+Requires **Pi 1.4.0+**, **Node.js 22.19+**, and a Codex subscription login through Pi (`/login`) or [Codex CLI](https://github.com/openai/codex) (`codex login`). Redemption requires the Pi login.
 
-## Features
+## Footer
 
-- Fresh usage reports with `/codex-usage`.
-- A compact footer that refreshes every minute while you use a Codex model.
-- Manual-only mode and user-level authentication-source preferences.
-- Account-checked stale snapshots when a refresh fails.
-- Remaining and used percentages, reset countdowns, and local reset times.
-- Model-specific limits when your account provides them.
-- Usage-credit balances and reset-credit counts.
-- Warnings for reset credits that expire within eight days.
-- Reset-credit redemption through Pi authentication with two-step confirmation.
-- Colours from your active Pi theme.
-
-Usage reporting is read-only. `/codex-redeem-reset` can consume one banked reset credit after you confirm the account and credit.
-
-## Usage
+Select an `openai-codex` model to see the footer. It refreshes once per minute and uses your Pi theme.
 
 ```text
-/codex-usage
+codex · 70% 5h ↻2h14m (16:30) · 40% 1w ↻3d (Thu 16:30) · 12.5 usage credits · 2 reset credits
 ```
 
-The report includes your plan, authentication source, query time, and available limits:
+Read the remaining percentage, time until reset, and local reset time for each limit. Your account determines the available windows and credits. The footer warns when a reset credit expires within eight days.
+
+## Commands
+
+| Command                         | What it does                                                                |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| `/codex-usage --timeout 30`     | Allow 30 seconds per request or CLI operation.                              |
+| `/codex-usage polling off`      | Stop background requests. Run `/codex-usage` to fetch usage.                |
+| `/codex-usage polling on`       | Restore background refreshes. This is the default.                          |
+| `/codex-usage source auto`      | Use Pi authentication, or CLI if you have no Pi login. This is the default. |
+| `/codex-usage source pi`        | Use the Pi OpenAI Codex login.                                              |
+| `/codex-usage source codex-cli` | Use the Codex CLI login.                                                    |
+
+The usage timeout accepts 1–120 seconds and defaults to 15 seconds. It applies to each request or CLI operation, so a query with multiple operations can take longer.
+
+## Redeem a reset credit
+
+Use an interactive Pi terminal with a Pi OpenAI Codex subscription login and source mode `auto` or `pi`. To switch from CLI mode, run `/login` and `/codex-usage source pi`. Redemption does not use CLI credentials or change your source preference.
+
+Run `/codex-redeem-reset`. Read the account ID and credit expiry in the prompts, then:
+
+1. Type `y` to continue.
+2. Type the displayed four-digit challenge to redeem.
+
+Press Escape or enter a different answer to cancel. The command accepts no arguments or confirmation bypass. It is not an agent tool and cannot run in print, JSON, or RPC mode.
+
+> [!WARNING]
+> **An unknown outcome may mean you spent a credit.** A connection failure, timeout, or unexpected server response after submission does not prove failure. The extension does not retry the write. Check `/codex-usage` before another attempt. Each new attempt uses a new request ID.
+
+<details>
+<summary>Credit selection and redemption safeguards</summary>
+
+The command selects a usable credit with the earliest known expiry. It selects a credit with unknown expiry if no dated, unexpired credit is available.
+
+Before submission, the command rechecks your account, source, and selected credit. Account changes, session or model changes, and expired or missing credits cancel the attempt. The command does not substitute a different credit after confirmation. Each network request has a 15-second timeout.
+
+After submission, the extension clears old usage snapshots and requests fresh usage, including in manual-only mode. A failed refresh does not undo a successful redemption. The extension blocks overlapping redemption commands in the same session; other sessions and devices can consume credits during your attempt.
+
+</details>
+
+## Reference
+
+<details>
+<summary>Usage reports and credits</summary>
+
+Each `/codex-usage` invocation fetches fresh usage. The report includes your plan, authentication source, query time, and available limits. For example:
 
 ```text
 >_ OpenAI Codex Usage
@@ -56,75 +96,31 @@ Codex:
   Usage credits: 12.5
 ```
 
-Each `/codex-usage` invocation fetches fresh usage. To allow more time for a request:
+**Usage credits** are your additional usage balance. The footer omits `usage credits: none` and zero reset-credit counts. You can see these values in the detailed report.
 
-```text
-/codex-usage --timeout 30
-```
+**Reset credits** are banked entitlements to reset eligible subscription limits. The report lists known expiration dates. Available limit windows depend on your account; they are not restricted to five hours and one week.
 
-The timeout accepts 1-120 seconds and defaults to 15 seconds. It applies to each request or Codex CLI operation, so a query with multiple operations can take longer.
+Usage reporting is read-only. The redemption command can consume one banked reset credit after you confirm the account and credit.
 
-### Footer
+</details>
 
-The footer appears when you select an `openai-codex` model and clears when you switch to another provider. It refreshes once per minute and uses model-specific limits when available. CLI results include a `(CLI)` label.
+<details>
+<summary>Footer refreshes and stale data</summary>
 
-If a refresh fails, the footer keeps the last successful snapshot only when Pi can still identify the same account. It marks those values **stale** and shows their age. Switching models or authentication sources clears the snapshot. CLI results and results without a stable account identity are not retained after failure.
+The footer uses model-specific limits when available. CLI results include a `(CLI)` label. Switch to another provider to clear the footer; you can run `/codex-usage` with any provider selected.
 
-Each limit shows the remaining percentage, window duration, and reset time. Reset times use your local timezone. Your account determines the available windows; they are not restricted to five hours and one week.
+Background requests run in the interactive terminal with a Codex model selected and polling enabled. JSON, print, and RPC sessions do not start background polling. In manual-only mode, the footer includes the capture time of your requested snapshot.
 
-### Credits
+Usage snapshots stay in memory. After a failed refresh, the extension retains the last successful snapshot if Pi can identify the same account. The footer marks those values **stale** and shows their age. Switching models or authentication sources clears the snapshot. The extension discards CLI results and results without a stable account identity after a failure.
 
-**Usage credits** are your additional usage balance. The footer omits `usage credits: none` and zero reset-credit counts. The detailed `/codex-usage` report still includes these values.
+</details>
 
-**Reset credits** are banked entitlements to reset eligible subscription limits. The report lists known expiration dates, and the footer warns when a credit expires within eight days.
+<details>
+<summary>Preferences and settings file</summary>
 
-### Redeem a reset credit
+Preferences apply to your user account, not the current project. The source and polling commands save them in `~/.pi/agent/codex-pulse.json`, or in `codex-pulse.json` under your custom `PI_CODING_AGENT_DIR`.
 
-Use an interactive Pi terminal with a Pi OpenAI Codex subscription login:
-
-```text
-/codex-redeem-reset
-```
-
-The command selects a usable credit with the earliest known expiry. It uses a credit with unknown expiry only when no dated, unexpired credit is available. Read the Pi account ID and credit expiry in the confirmation prompts:
-
-1. Type `y` to continue.
-2. Type the displayed four-digit challenge to redeem.
-
-Press Escape or enter a different answer to cancel. The command accepts no arguments or confirmation bypass. It is not an agent tool and does not work in print, JSON, or RPC mode.
-
-Redemption requires Pi authentication in `auto` or `pi` source mode. It does not use CLI credentials or change your source preference. If you selected CLI, use `/login` and `/codex-usage source pi` before redeeming.
-
-Before submission, the command checks the account, source, and selected credit again. Account changes, session/model changes, or an expired or missing credit cancel the attempt. The command does not substitute a different credit after confirmation. Each network request has a 15-second timeout.
-
-**An unknown outcome can mean that a credit was consumed.** A connection failure, timeout, or unexpected server response after submission does not prove failure. The extension does not retry the write. Check `/codex-usage` before attempting another redemption; a new attempt uses a new request ID.
-
-After submission, the extension clears old usage snapshots and requests fresh usage, including in manual-only mode. A failed refresh does not undo a successful redemption. The extension blocks overlapping redemption commands in the same session; other sessions and devices can still consume credits.
-
-## Preferences
-
-Disable background requests and query usage only when you need it:
-
-```text
-/codex-usage polling off
-/codex-usage
-```
-
-Enable automatic refreshes again:
-
-```text
-/codex-usage polling on
-```
-
-Choose which login supplies usage:
-
-```text
-/codex-usage source auto
-/codex-usage source pi
-/codex-usage source codex-cli
-```
-
-Preferences apply to your user account, not the current project. The commands save them in `~/.pi/agent/codex-pulse.json` (or your custom `PI_CODING_AGENT_DIR`):
+Defaults:
 
 ```json
 {
@@ -133,29 +129,33 @@ Preferences apply to your user account, not the current project. The commands sa
 }
 ```
 
-Run `/reload` after editing this file by hand. Invalid settings stop background queries until you fix the file and reload. In manual-only mode, a requested footer snapshot includes its capture time. JSON, print, and RPC sessions do not start background polling.
+Run `/reload` after editing this file by hand. Invalid settings stop background queries until you fix the file and reload.
 
-## Authentication
+</details>
 
-In **auto** mode, Pi Codex Pulse uses your Pi OpenAI Codex login. If no Pi login is configured, it uses a temporary Codex CLI app-server process.
+<details>
+<summary>Authentication and account selection</summary>
 
-**A failed Pi request does not switch to CLI.** Pi and Codex CLI can use different accounts, and the CLI account API does not expose enough identity information to prove that they match. Choose `source codex-cli` explicitly to use that login instead. An API-key-only CLI login cannot read subscription limits.
+In **auto** mode, Pi Codex Pulse uses your Pi OpenAI Codex login. Without a Pi login, the extension starts a temporary Codex CLI app-server process.
 
-In **pi** mode, the extension uses only Pi authentication. In **codex-cli** mode, it uses only the CLI login.
+**A failed Pi request does not switch to CLI.** Pi and Codex CLI can use different accounts. The CLI account API does not expose enough identity information to prove that they match. Choose `/codex-usage source codex-cli` to use that login instead. An API-key-only CLI login cannot read subscription limits.
 
-Usage snapshots stay in memory. Background requests run only in the interactive terminal while a Codex model is selected and polling is enabled. The extension redacts common credential patterns from errors; review diagnostic output before sharing it.
+In **pi** mode, the extension uses Pi authentication without CLI fallback. In **codex-cli** mode, it uses the CLI login without Pi authentication.
+
+The extension redacts common credential patterns from errors. Review diagnostic output before sharing it.
+
+</details>
 
 This is an unofficial integration with ChatGPT and Codex. Upstream changes can affect compatibility.
 
 ## Troubleshooting
 
-**No usage available:** Run `/login` in Pi and choose the OpenAI Codex subscription login. To use CLI instead, run `codex login` with a ChatGPT account, then `/codex-usage source codex-cli`.
-
-**Codex CLI cannot start:** Check that `codex --version` works in the terminal where you launch Pi.
-
-**Requests time out:** Try `/codex-usage --timeout 30`.
-
-**No footer:** Select an `openai-codex` model. You can still run `/codex-usage` while another provider is selected.
+| Problem                | Try this                                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No usage available     | Run `/login` in Pi and choose the OpenAI Codex subscription login. For CLI, run `codex login` with a ChatGPT account, then `/codex-usage source codex-cli`. |
+| Codex CLI cannot start | Check that `codex --version` works in the terminal where you launch Pi.                                                                                     |
+| Requests time out      | Run `/codex-usage --timeout 30`.                                                                                                                            |
+| No footer              | Select an `openai-codex` model. You can run `/codex-usage` with another provider selected.                                                                  |
 
 ## Uninstall
 

@@ -30,9 +30,10 @@ Restart Pi or run `/reload` to load the extension.
 - Model-specific limits when your account provides them.
 - Usage-credit balances and reset-credit counts.
 - Warnings for reset credits that expire within eight days.
+- Reset-credit redemption through Pi authentication with two-step confirmation.
 - Colours from your active Pi theme.
 
-Pi Codex Pulse is read-only. It does not redeem reset credits or change your subscription.
+Usage reporting is read-only. `/codex-redeem-reset` can consume one banked reset credit after you confirm the account and credit.
 
 ## Usage
 
@@ -55,7 +56,7 @@ Codex:
   Usage credits: 12.5
 ```
 
-Each command fetches fresh usage. To allow more time for a request:
+Each `/codex-usage` invocation fetches fresh usage. To allow more time for a request:
 
 ```text
 /codex-usage --timeout 30
@@ -73,9 +74,32 @@ Each limit shows the remaining percentage, window duration, and reset time. Rese
 
 ### Credits
 
-**Usage credits** are your additional usage balance.
+**Usage credits** are your additional usage balance. The footer omits `usage credits: none` and zero reset-credit counts. The detailed `/codex-usage` report still includes these values.
 
-**Reset credits** are banked entitlements to reset eligible subscription limits. The report lists known expiration dates, and the footer warns when a credit expires within eight days. You cannot redeem credits through this extension.
+**Reset credits** are banked entitlements to reset eligible subscription limits. The report lists known expiration dates, and the footer warns when a credit expires within eight days.
+
+### Redeem a reset credit
+
+Use an interactive Pi terminal with a Pi OpenAI Codex subscription login:
+
+```text
+/codex-redeem-reset
+```
+
+The command selects a usable credit with the earliest known expiry. It uses a credit with unknown expiry only when no dated, unexpired credit is available. Read the Pi account ID and credit expiry in the confirmation prompts:
+
+1. Type `y` to continue.
+2. Type the displayed four-digit challenge to redeem.
+
+Press Escape or enter a different answer to cancel. The command accepts no arguments or confirmation bypass. It is not an agent tool and does not work in print, JSON, or RPC mode.
+
+Redemption requires Pi authentication in `auto` or `pi` source mode. It does not use CLI credentials or change your source preference. If you selected CLI, use `/login` and `/codex-usage source pi` before redeeming.
+
+Before submission, the command checks the account, source, and selected credit again. Account changes, session/model changes, or an expired or missing credit cancel the attempt. The command does not substitute a different credit after confirmation. Each network request has a 15-second timeout.
+
+**An unknown outcome can mean that a credit was consumed.** A connection failure, timeout, or unexpected server response after submission does not prove failure. The extension does not retry the write. Check `/codex-usage` before attempting another redemption; a new attempt uses a new request ID.
+
+After submission, the extension clears old usage snapshots and requests fresh usage, including in manual-only mode. A failed refresh does not undo a successful redemption. The extension blocks overlapping redemption commands in the same session; other sessions and devices can still consume credits.
 
 ## Preferences
 

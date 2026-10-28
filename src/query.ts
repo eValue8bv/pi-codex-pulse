@@ -183,7 +183,7 @@ export async function queryViaPiAuth(
 }
 
 /** @throws {Error} For cancellation, HTTP failure, malformed usage data, or a request timeout. */
-async function queryWithPiAuth(
+export async function queryWithPiAuth(
   auth: PiCodexAuth,
   timeoutMs: number,
   signal?: AbortSignal,

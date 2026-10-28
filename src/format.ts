@@ -99,8 +99,9 @@ export function formatCodexUsageStatusline(
   const snapshot = selectSnapshotForModel(report, model);
   const sourceLabel = report.source === "codex-app-server" ? " (CLI)" : "";
   if (!snapshot) {
-    if (report.resetCreditsAvailable === undefined)
+    if (!report.resetCreditsAvailable) {
       return `codex${sourceLabel} usage unavailable`;
+    }
     const parts = [
       styles.heading(`codex${sourceLabel}`),
       styles.number(formatResetCredits(report.resetCreditsAvailable)),
@@ -137,8 +138,9 @@ export function formatCodexUsageStatusline(
     ? formatFooterCredits(snapshot.credits)
     : undefined;
   if (credits) parts.push(styles.number(credits));
-  if (report.resetCreditsAvailable !== undefined)
+  if (report.resetCreditsAvailable) {
     parts.push(styles.number(formatResetCredits(report.resetCreditsAvailable)));
+  }
   const warning = formatExpiringResetWarning(report, now, styles);
   if (warning) parts.push(warning);
   return parts.join(styles.dim(" · "));
@@ -371,11 +373,11 @@ function formatClockTime(date: Date): string {
 }
 
 function formatFooterCredits(credits: NormalizedCredits): string | undefined {
-  if (credits.hasCredits && !credits.unlimited && !credits.balance?.trim()) {
+  if (!credits.hasCredits || (!credits.unlimited && !credits.balance?.trim())) {
     return undefined;
   }
   const value = formatCredits(credits);
-  if (!credits.hasCredits || credits.unlimited) {
+  if (credits.unlimited) {
     return `usage credits: ${value}`;
   }
   return `${value} usage credits`;

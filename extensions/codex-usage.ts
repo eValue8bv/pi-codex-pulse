@@ -17,6 +17,7 @@ import {
   type QueryUsageOptions,
   type QueryUsageResult,
 } from "../src/query.ts";
+import { redeemReset, RedemptionUncertainError } from "../src/redeem.ts";
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -33,6 +34,7 @@ import {
 } from "../src/utils.ts";
 
 export const COMMAND_NAME = "codex-usage";
+export const REDEEM_COMMAND_NAME = "codex-redeem-reset";
 export const STATUS_KEY = "codex-pulse";
 export const STATUS_REFRESH_INTERVAL_MS = 60_000;
 export type UsageCommandOptions = Pick<QueryUsageOptions, "timeoutMs">;
@@ -46,6 +48,7 @@ export interface SettingsStore {
 }
 export interface ExtensionDependencies {
   query?: UsageQuery;
+  redeem?: typeof redeemReset;
   settings?: SettingsStore;
 }
 interface Snapshot {
@@ -62,6 +65,7 @@ export function registerCodexPulse(
   dependencies: ExtensionDependencies = {},
 ): void {
   const runQuery = dependencies.query ?? queryUsage;
+  const runRedeem = dependencies.redeem ?? redeemReset;
   const path = settingsPath(getAgentDir());
   const store = dependencies.settings ?? {
     load: () => loadSettings(path),
@@ -75,9 +79,12 @@ export function registerCodexPulse(
   let sessionActive = false;
   let stopped = false;
   let savingSettings = false;
+  let redemption: AbortController | undefined;
+  let liveContext: ExtensionContext | undefined;
 
   const invalidate = (clearSnapshot = false): void => {
     generation += 1;
+    redemption?.abort();
     active?.abort();
     active = undefined;
     if (timer) {
@@ -108,6 +115,7 @@ export function registerCodexPulse(
   const canPoll = (ctx: ExtensionContext): boolean =>
     sessionActive &&
     !stopped &&
+    !redemption &&
     settings.polling &&
     ctx.hasUI &&
     ctx.mode === "tui" &&
@@ -253,7 +261,7 @@ export function registerCodexPulse(
   };
 
   const backgroundRefresh = (ctx: ExtensionContext): void => {
-    if (savingSettings) {
+    if (savingSettings || redemption) {
       return;
     }
     void refresh(ctx, DEFAULT_TIMEOUT_MS, false).catch(() => {
@@ -342,6 +350,13 @@ export function registerCodexPulse(
         await updateSettings(tokens, ctx);
         return;
       }
+      if (redemption) {
+        ctx.ui.notify(
+          "A reset redemption is in progress. Finish or cancel its confirmation first.",
+          "warning",
+        );
+        return;
+      }
       const parsed = parseUsageArgs(args);
       if (!parsed.ok) {
         ctx.ui.notify(parsed.error, "warning");
@@ -351,7 +366,90 @@ export function registerCodexPulse(
     },
   });
 
+  pi.registerCommand(REDEEM_COMMAND_NAME, {
+    description:
+      "Redeem one Codex reset credit through Pi authentication after confirmation",
+    handler: async (args, ctx) => {
+      if (args.trim()) {
+        ctx.ui.notify("Usage: /codex-redeem-reset", "warning");
+        return;
+      }
+      if (!ctx.hasUI || ctx.mode !== "tui") {
+        throw new Error(
+          "/codex-redeem-reset requires an interactive terminal UI.",
+        );
+      }
+      if (stopped) {
+        return;
+      }
+      if (redemption || savingSettings) {
+        ctx.ui.notify(
+          "A redemption or preferences update is already in progress.",
+          "warning",
+        );
+        return;
+      }
+      liveContext = ctx;
+      invalidate(true);
+      setStatus(ctx, undefined);
+      const controller = new AbortController();
+      redemption = controller;
+      const operationGeneration = generation;
+      let submitted = false;
+      try {
+        const outcome = await runRedeem(ctx, {
+          signal: controller.signal,
+          readSource: async () => (await store.load()).source,
+          onSubmit: () => {
+            submitted = true;
+          },
+        });
+        if (outcome && !stopped && liveContext) {
+          const messages = {
+            reset: "Codex reset redeemed successfully.",
+            nothingToReset: "Codex reported nothing to reset.",
+            noCredit: "Codex reported no available credit for this redemption.",
+            alreadyRedeemed:
+              "Codex reported this redemption was already processed; no second reset is claimed.",
+          };
+          liveContext.ui.notify(
+            messages[outcome],
+            outcome === "reset" || outcome === "alreadyRedeemed"
+              ? "info"
+              : "warning",
+          );
+        }
+      } catch (error) {
+        if (
+          !stopped &&
+          liveContext &&
+          !isStaleContextError(error) &&
+          (!controller.signal.aborted ||
+            error instanceof RedemptionUncertainError)
+        ) {
+          liveContext.ui.notify(
+            redactSensitiveText(errorMessage(error)),
+            "error",
+          );
+        }
+      } finally {
+        redemption = undefined;
+        if (!stopped && operationGeneration === generation) {
+          if (submitted) {
+            // A failed read must not overwrite the already reported write outcome.
+            await refresh(ctx, DEFAULT_TIMEOUT_MS, true);
+          } else if (canPoll(ctx)) {
+            backgroundRefresh(ctx);
+          }
+        } else if (liveContext && canPoll(liveContext)) {
+          backgroundRefresh(liveContext);
+        }
+      }
+    },
+  });
+
   pi.on("session_start", (_event, ctx) => {
+    liveContext = ctx;
     invalidate(true);
     sessionActive = true;
     stopped = false;
@@ -360,6 +458,7 @@ export function registerCodexPulse(
     }
   });
   pi.on("model_select", (_event, ctx) => {
+    liveContext = ctx;
     invalidate(true);
     setStatus(ctx, undefined);
     if (ctx.hasUI && ctx.mode === "tui" && isOpenAICodexModel(ctx.model)) {

@@ -1,6 +1,6 @@
 {
   "name": "pi-codex-pulse",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Read-only Codex subscription usage, limits, and credits for Pi.",
   "repository": {
     "type": "git",

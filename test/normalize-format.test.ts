@@ -308,7 +308,7 @@ describe("usage formatting", () => {
     expect(status).toContain("<heading>codex</heading>");
     expect(status).toContain("<variant>spark</variant>");
     expect(status).toContain("<primary>20% 5h</primary>");
-    expect(status).toContain("<number>usage credits: none</number>");
+    expect(status).not.toContain("usage credits: none");
     expect(status).toContain("<number>2 reset credits</number>");
     expect(status).toContain("<dim> · </dim>");
   });
@@ -322,7 +322,7 @@ describe("usage formatting", () => {
 
     expect(status).toContain("codex spark");
     expect(status).toContain("20% 5h");
-    expect(status).toContain("none");
+    expect(status).not.toContain("none");
     expect(status).toContain("2 reset credits");
   });
 
@@ -396,7 +396,7 @@ describe("usage formatting", () => {
     );
   });
 
-  it("preserves known credit states in the footer", () => {
+  it("hides absent usage credits but preserves available credits in the footer", () => {
     const statusForCredits = (
       credits: NonNullable<CodexUsageReport["snapshots"][number]["credits"]>,
     ): string =>
@@ -406,8 +406,8 @@ describe("usage formatting", () => {
         snapshots: [{ limitId: "codex", credits }],
       });
 
-    expect(statusForCredits({ hasCredits: false, unlimited: false })).toContain(
-      "none",
+    expect(statusForCredits({ hasCredits: false, unlimited: false })).toBe(
+      "codex",
     );
     expect(statusForCredits({ hasCredits: true, unlimited: true })).toContain(
       "unlimited",
@@ -503,7 +503,39 @@ describe("usage formatting", () => {
         resetCreditsAvailable: 0,
         snapshots: [],
       }),
-    ).toBe("codex · 0 reset credits");
+    ).toBe("codex usage unavailable");
+  });
+
+  it("hides empty credit entries only from the footer", () => {
+    const emptyCredits: CodexUsageReport = {
+      source: "pi-auth",
+      capturedAt: 1,
+      resetCreditsAvailable: 0,
+      snapshots: [
+        {
+          limitId: "codex",
+          primary: { usedPercent: 39, windowMinutes: 300 },
+          secondary: { usedPercent: 6, windowMinutes: 10080 },
+          credits: { hasCredits: false, unlimited: false },
+        },
+      ],
+    };
+    expect(formatCodexUsageStatusline(emptyCredits)).toBe(
+      "codex · 61% 5h · 94% 1w",
+    );
+    const details = formatCodexUsageReport(emptyCredits);
+    expect(details).toContain("Usage credits: none");
+    expect(details).toContain("Reset credits: 0");
+    expect(
+      formatCodexUsageStatusline({ ...emptyCredits, resetCreditsAvailable: 2 }),
+    ).toBe("codex · 61% 5h · 94% 1w · 2 reset credits");
+    expect(
+      formatCodexUsageStatusline({
+        ...emptyCredits,
+        source: "codex-app-server",
+        snapshots: [],
+      }),
+    ).toBe("codex (CLI) usage unavailable");
   });
 
   it("formats plan names and dynamic durations", () => {

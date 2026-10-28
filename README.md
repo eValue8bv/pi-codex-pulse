@@ -74,7 +74,7 @@ Each limit shows the remaining percentage, window duration, and reset time. Rese
 
 ### Credits
 
-**Usage credits** are your additional usage balance.
+**Usage credits** are your additional usage balance. The footer omits `usage credits: none` and zero reset-credit counts. The detailed `/codex-usage` report still includes these values.
 
 **Reset credits** are banked entitlements to reset eligible subscription limits. The report lists known expiration dates, and the footer warns when a credit expires within eight days.
 

@@ -54,6 +54,7 @@ describe("Pi package", () => {
       expect(loaded.extensions).toHaveLength(1);
       expect([...loaded.extensions[0]!.commands.keys()]).toEqual([
         "codex-usage",
+        "codex-redeem-reset",
       ]);
       expect(loaded.extensions[0]!.tools.size).toBe(0);
       run(["remove", root]);

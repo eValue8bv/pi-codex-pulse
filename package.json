@@ -1,7 +1,7 @@
 {
   "name": "pi-codex-pulse",
   "version": "1.0.0",
-  "description": "Read-only Codex subscription usage, limits, and credits for Pi.",
+  "description": "Codex subscription usage, limits, credits, and confirmed reset redemption for Pi.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/eValue8bv/pi-codex-pulse.git"

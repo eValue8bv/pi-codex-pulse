@@ -69,7 +69,7 @@ async function initializeClient(client: CodexAppServerClient): Promise<void> {
     clientInfo: {
       name: "pi_codex_pulse",
       title: "Pi Codex Pulse",
-      version: "0.1.0",
+      version: "1.0.0",
     },
     capabilities: {
       experimentalApi: false,

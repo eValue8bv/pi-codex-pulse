@@ -1,0 +1,63 @@
+{
+  "name": "pi-codex-pulse",
+  "version": "0.1.0",
+  "description": "Read-only Codex subscription usage, limits, and credits for Pi.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eValue8bv/pi-codex-pulse.git"
+  },
+  "homepage": "https://github.com/eValue8bv/pi-codex-pulse#readme",
+  "bugs": "https://github.com/eValue8bv/pi-codex-pulse/issues",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "openai",
+    "codex",
+    "usage",
+    "rate-limits"
+  ],
+  "files": [
+    "extensions",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run format:check && npm run typecheck && npm test",
+    "prepack": "npm run check"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^24.0.0",
+    "prettier": "^3.9.5",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/codex-usage.ts"
+    ]
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.6"
+  },
+  "overrides": {
+    "@earendil-works/pi-coding-agent": {
+      "undici": "^8.12.2"
+    }
+  }
+}

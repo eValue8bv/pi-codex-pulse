@@ -1,14 +1,18 @@
 name: Check
 
 on:
-  push:
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   check:
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

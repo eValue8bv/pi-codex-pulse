@@ -353,13 +353,13 @@ describe("read-only command", () => {
     expect(statusValues.at(-1)).toContain("<syntaxType>50% 1w</syntaxType>");
   });
 
-  it("reports usage for non-Codex models without a footer", async () => {
+  it("shows Codex usage for OpenAI models", async () => {
     const { command, ctx, rawContext, statusValues } = harness(
       vi.fn(async () => success()),
     );
     rawContext.model = model("other", "openai");
     await command.handler("", ctx);
-    expect(statusValues).toEqual([]);
+    expect(statusValues.at(-1)).toContain("codex");
     expect(rawContext.ui.notify).toHaveBeenCalledWith(
       expect.stringContaining("OpenAI Codex Usage"),
       "info",
@@ -536,9 +536,16 @@ describe("footer lifecycle", () => {
     expect(query).toHaveBeenCalledTimes(3);
     rawContext.model = model("other", "openai");
     events.get("model_select")?.({ model: rawContext.model } as never, ctx);
+    await flushPromises();
+    expect(statusValues.at(-1)).toContain("90% 5h");
+    expect(query).toHaveBeenCalledTimes(4);
+    await vi.advanceTimersByTimeAsync(STATUS_REFRESH_INTERVAL_MS);
+    expect(query).toHaveBeenCalledTimes(5);
+    rawContext.model = model("other", "anthropic");
+    events.get("model_select")?.({ model: rawContext.model } as never, ctx);
     expect(statusValues.at(-1)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(STATUS_REFRESH_INTERVAL_MS * 2);
-    expect(query).toHaveBeenCalledTimes(3);
+    expect(query).toHaveBeenCalledTimes(5);
   });
 
   it("uses the current theme for a refreshed snapshot", async () => {

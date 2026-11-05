@@ -119,7 +119,7 @@ export function registerCodexPulse(
     settings.polling &&
     ctx.hasUI &&
     ctx.mode === "tui" &&
-    isOpenAICodexModel(ctx.model);
+    isCodexStatusModel(ctx.model);
   const schedule = (ctx: ExtensionContext): void => {
     if (!canPoll(ctx)) {
       return;
@@ -159,7 +159,7 @@ export function registerCodexPulse(
       !stopped &&
       generation === requestGeneration &&
       !controller.signal.aborted;
-    const showStatus = ctx.hasUI && isOpenAICodexModel(ctx.model);
+    const showStatus = ctx.hasUI && isCodexStatusModel(ctx.model);
     let settingsLoaded = false;
     if (showStatus) {
       setStatus(ctx, "codex checking…");
@@ -453,7 +453,7 @@ export function registerCodexPulse(
     invalidate(true);
     sessionActive = true;
     stopped = false;
-    if (ctx.hasUI && ctx.mode === "tui" && isOpenAICodexModel(ctx.model)) {
+    if (ctx.hasUI && ctx.mode === "tui" && isCodexStatusModel(ctx.model)) {
       backgroundRefresh(ctx);
     }
   });
@@ -461,7 +461,7 @@ export function registerCodexPulse(
     liveContext = ctx;
     invalidate(true);
     setStatus(ctx, undefined);
-    if (ctx.hasUI && ctx.mode === "tui" && isOpenAICodexModel(ctx.model)) {
+    if (ctx.hasUI && ctx.mode === "tui" && isCodexStatusModel(ctx.model)) {
       // Resolve authentication again; model changes may select a different account.
       backgroundRefresh(ctx);
     }
@@ -522,6 +522,12 @@ export function isOpenAICodexModel(
   model: Pick<CodexUsageModel, "provider"> | undefined,
 ): boolean {
   return model?.provider === CODEX_PROVIDER_ID;
+}
+
+function isCodexStatusModel(
+  model: Pick<CodexUsageModel, "provider"> | undefined,
+): boolean {
+  return isOpenAICodexModel(model) || model?.provider === "openai";
 }
 
 export function formatSnapshotAge(

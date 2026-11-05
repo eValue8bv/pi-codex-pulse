@@ -30,7 +30,7 @@ Requires **Pi 1.4.0+**, **Node.js 22.19+**, and a Codex subscription login throu
 
 ## Footer
 
-Select an `openai-codex` model to see the footer. It refreshes once per minute and uses your Pi theme.
+Select an `openai-codex` or `openai` model to see the footer. It refreshes once per minute and uses your Pi theme. The footer always shows Codex subscription usage, not OpenAI API usage or spending; a Codex subscription login is still required.
 
 ```text
 codex · 70% 5h ↻2h14m (16:30) · 40% 1w ↻3d (Thu 16:30) · 12.5 usage credits · 2 reset credits
@@ -107,7 +107,7 @@ Usage reporting is read-only. The redemption command can consume one banked rese
 <details>
 <summary>Footer refreshes and stale data</summary>
 
-The footer uses model-specific limits when available. CLI results include a `(CLI)` label. Switch to another provider to clear the footer; you can run `/codex-usage` with any provider selected.
+The footer uses model-specific limits when available. CLI results include a `(CLI)` label. Switch to a provider other than `openai-codex` or `openai` to clear the footer; you can run `/codex-usage` with any provider selected.
 
 Background requests run in the interactive terminal with a Codex model selected and polling enabled. JSON, print, and RPC sessions do not start background polling. In manual-only mode, the footer includes the capture time of your requested snapshot.
 
@@ -155,7 +155,7 @@ This is an unofficial integration with ChatGPT and Codex. Upstream changes can a
 | No usage available     | Run `/login` in Pi and choose the OpenAI Codex subscription login. For CLI, run `codex login` with a ChatGPT account, then `/codex-usage source codex-cli`. |
 | Codex CLI cannot start | Check that `codex --version` works in the terminal where you launch Pi.                                                                                     |
 | Requests time out      | Run `/codex-usage --timeout 30`.                                                                                                                            |
-| No footer              | Select an `openai-codex` model. You can run `/codex-usage` with another provider selected.                                                                  |
+| No footer              | Select an `openai-codex` or `openai` model. You can run `/codex-usage` with another provider selected.                                                      |
 
 ## Uninstall
 
